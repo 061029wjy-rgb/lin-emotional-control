@@ -98,9 +98,11 @@ export function noteFor(plan,mem,s,actor){
     if(plan.card){lines.push((plan.carry?'承接这个角色私下未过的情绪，不重演上轮动作，外在表现可以变：':'本轮落点：')+plan.card.direction);
         if(plan.card.mood){if(s.intensity>=95&&plan.level>=60)lines.push('情绪可以压过判断：明知不划算也可以照做，前后矛盾也不必当场圆回来。别为了顺从对方而立刻好转、道歉或让步。用这个人自己的方式失态。');
         else if(plan.level>=52)lines.push('让这份情绪实在地影响言行。可以听懂好意而不接受，情绪也不必当场化解。');
-        else lines.push('分量轻些，落在一个自然的反应里，不必扩大。');}
+        else lines.push('分量轻些，落在一个自然的反应里，不必扩大。');
+        lines.push('其他自然反应可以与这份情绪并存，短暂转移注意不等于消气或和解。');}
         const angle=deliveryAngle(plan.voice,plan.phase);if(angle)lines.push(angle);
-        if(s.independent)lines.push('这个人有自己的注意力、利益和时间，可以不配合剧情里对方的期待。');
+        lines.push('反应可由当前事务、已有性格/情绪或现场合理刺激引出；转移注意力要符合这个人的动机与轻重缓急，不拿无依据的感官异常、癖好或往事凑意外。来由可以不说破；落点不合此刻就略过，接着当前事务。');
+        if(s.independent)lines.push('这个人有自己的注意力、利益和时间，以自身动机决定回应，不以满足 user 的期待为默认目标。可以不配合，也可以出于真心关心或合作；不机械唱反调，不用道歉、示好或回头照顾来补偿每一次拒绝。');
         const participation=participationFor(plan.card,s);if(participation)lines.push(participation);}
     for(const f of facts)lines.push(`本分支已确认原文${f.private?'（仅本角色作私下线索，别人未必知道）':'（沿用原有知情范围）'}：${JSON.stringify(inline(f.quote,72))}`);
     lines.push('融入原有正文与格式，无需复述本说明；戏外编辑要求照常执行。');return lines.join('\n');
