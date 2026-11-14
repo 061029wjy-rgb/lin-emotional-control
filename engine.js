@@ -4,9 +4,9 @@ export const KEY='human_temper_v1';
 export const MARK='〔人性阴暗面/情绪/随机性放大·角色演出〕';
 export const BALANCED=Object.freeze({eventRate:65,unpredict:75,dark:75,intensity:82,independent:true,memory:true});
 export const STRONG=Object.freeze({eventRate:25,unpredict:100,dark:100,intensity:100,independent:true,memory:true});
-export const DEFAULTS=Object.freeze({enabled:true,scope:'chat',...STRONG});
+export const DEFAULTS=Object.freeze({enabled:true,scope:'chat',userAccess:50,...STRONG});
 export function config(source={}) {
-    const out={...DEFAULTS}; for(const k of ['eventRate','unpredict','dark','intensity']){
+    const out={...DEFAULTS}; for(const k of ['eventRate','unpredict','dark','intensity','userAccess']){
         const n=source?.[k]; if(Number.isFinite(n))out[k]=Math.min(100,Math.max(0,Math.round(n)));
     }
     for(const k of ['enabled','independent','memory'])if(typeof source?.[k]==='boolean')out[k]=source[k];
@@ -82,6 +82,16 @@ export function roll(settings,context,mem={},rng=localRandom){
     return {card,level,left,carry:false,voice:chooseVoice(card,tags,rng),phase:0};
 }
 function inline(t,n){return [...String(t??'').replace(/[\r\n\u0000-\u001f]+/g,' ').trim()].slice(0,n).join('');}
+// A manual presentation preference for existing events, never another draw or a participation quota.
+function participationFor(card,s){
+    if(card.group!=='event'&&card.group!=='agency')return '';
+    const access=config(s).userAccess;
+    const entry=access===0?'不额外铺设入口；user 主动介入时，按现场条件与角色意愿回应。':
+        access<=33?'入口可以不明显，通常需 user 自己留意、询问或找到时机，不特意递话。':
+        access<=66?'有合适条件时自然露出可察觉的参与机会，留一些需要 user 主动接近或询问的空间。':
+        '有合适条件时优先呈现容易发现、顺手加入的机会，减少额外询问或等待；100 也不保证每件事都可加入。';
+    return `user 参与便利度 ${access}/100：${entry}\n仅调整本轮事务的入口，不另造事件或巧合；既有独处、拒绝与知情边界照旧，没有合适入口就保持独立。\nuser 可加入、旁观或不参与；加入可以影响过程，不参与也能自行发展与收束，不停下来等 user 解决、决定或配合，也不反复邀请。`;
+}
 export function noteFor(plan,mem,s,actor){
     const facts=s.memory?(mem.confirmed??[]).slice(-3):[];if(!plan.card&&!facts.length)return '';
     const lines=[MARK+` 只演当前说话的角色${actor?.name?'「'+inline(actor.name,32)+'」':''}。角色卡的明确底线、所知范围和已发生的事实优先；用户自己的言行由用户决定。`];
@@ -90,7 +100,8 @@ export function noteFor(plan,mem,s,actor){
         else if(plan.level>=52)lines.push('让这份情绪实在地影响言行。可以听懂好意而不接受，情绪也不必当场化解。');
         else lines.push('分量轻些，落在一个自然的反应里，不必扩大。');}
         const angle=deliveryAngle(plan.voice,plan.phase);if(angle)lines.push(angle);
-        if(s.independent)lines.push('这个人有自己的注意力、利益和时间，可以不配合剧情里对方的期待。');}
+        if(s.independent)lines.push('这个人有自己的注意力、利益和时间，可以不配合剧情里对方的期待。');
+        const participation=participationFor(plan.card,s);if(participation)lines.push(participation);}
     for(const f of facts)lines.push(`本分支已确认原文${f.private?'（仅本角色作私下线索，别人未必知道）':'（沿用原有知情范围）'}：${JSON.stringify(inline(f.quote,72))}`);
     lines.push('融入原有正文与格式，无需复述本说明；戏外编辑要求照常执行。');return lines.join('\n');
 }

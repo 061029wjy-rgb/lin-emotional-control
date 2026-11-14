@@ -12,7 +12,7 @@ function detail(title){const d=node('details');d.append(node('summary',title));r
 function option(value,label){const n=node('option',label);n.value=value;return n;}
 function labeled(text,control){const lab=node('label','',{className:'lhn-labeled'});lab.append(node('span',text),control);return lab;}
 function check(container,key,title,hint){const n=node('input','',{type:'checkbox',id:'lhn_'+key});const label=node('label','',{className:'lhn-check'});label.append(n,document.createTextNode(title));container.append(label);if(hint)container.append(node('p',hint,{className:'lhn-hint'}));n.onchange=()=>changed({[key]:n.checked});controls[key]={n};}
-const sliders=[['intensity','情绪烈度','越高，越允许不理智与失态，情绪也持续更久。'],['dark','阴暗面放大','改变嫉妒、自利、记仇等动机的抽中权重；0 不再选这类动机。'],['unpredict','行为出格度','增加意外话头、小动作和偏离期待的自主选择。'],['eventRate','生活插曲','控制琐事、周围动静和小机会；与脾气大小无关。']];
+const sliders=[['intensity','情绪烈度','越高，越允许不理智与失态，情绪也持续更久。'],['dark','阴暗面放大','改变嫉妒、自利、记仇等动机的抽中权重；0 不再选这类动机。'],['unpredict','行为出格度','增加意外话头、小动作和偏离期待的自主选择。'],['eventRate','生活插曲','控制琐事、周围动静和小机会；与脾气大小无关。'],['userAccess','user 参与便利度','越高，越容易发现并介入生活插曲或独立事务。0 不额外铺入口；100 也可不参与、也允许没有合适入口，事件照常推进。只手动调整；切换烈性/均衡会保留此值。']];
 async function copyConfig(){const value=JSON.stringify(settings(),null,2);try{await navigator.clipboard.writeText(value);noteBox.textContent='配置已复制。';}catch{const box=node('textarea','',{readOnly:true,value});el.append(box);box.select();try{if(document.execCommand('copy')){box.remove();noteBox.textContent='配置已复制。';return;}}catch{}noteBox.textContent='请长按选中的配置文字复制。';}}
 function availableActors(){const c=ctx(),live=speaker(c);if(c.groupId==null||c.groupId==='')return live?[live]:[];
     const group=c.groups?.find(g=>String(g.id)===String(c.groupId));const owners=new Set(records(c).map(r=>r?.owner));
