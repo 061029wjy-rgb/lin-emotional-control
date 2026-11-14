@@ -1,6 +1,7 @@
-import {DEFAULTS, MARK, config, targetName, outOfStory, hasStory, scene, roll, noteFor} from './engine.js';
-import {BY_ID} from './catalog.js';
-import {branch, timeline, room, speaker, owns, receipt, put, visibleRowQuote, explicitlySettled} from './history.js';
+import {accessFor} from './access.js?v=1.2.0';
+import {DEFAULTS, MARK, config, localRandom, visible, targetName, outOfStory, hasStory, scene, roll, noteFor} from './engine.js?v=1.2.0';
+import {BY_ID} from './catalog.js?v=1.2.0';
+import {branch, accessHistory, timeline, room, speaker, owns, receipt, put, visibleRowQuote, explicitlySettled} from './history.js?v=1.2.0';
 
 const types=new Set(['normal','swipe','regenerate','continue']), typeOf=x=>x==null||x===''?'normal':String(x).toLowerCase();
 const last=(a,f)=>{for(let i=a.length-1;i>=0;i--)if(f(a[i]))return a[i];};
@@ -12,7 +13,7 @@ function toolOrSchema(req){if(req.json_schema||req.response_format&& !['text',un
         req.tool_choice!=null&&!['none','auto'].includes(req.tool_choice)||req.function_call!=null&&!['none','auto'].includes(req.function_call)||Number(req.n)>1)return true;
     // A prior completed tool exchange is normal history. Skip an active tool result at the end.
     const m=req.messages.at(-1);return ['tool','function'].includes(m?.role)||!!m?.tool_calls?.length||!!m?.function_call;}
-export function connect({context,settings=()=>DEFAULTS,rng,update=()=>{},autoBind=true}){
+export function connect({context,settings=()=>DEFAULTS,rng,accessRandom=localRandom,update=()=>{},autoBind=true}){
     let turn=null,pending=null,replay=null,closeTimer=null,status='就绪，等待聊天生成。',lastPlan=null,disposed=false;
     const bus=context().eventSource,ev=context().eventTypes||context().event_types||{},listeners=[];
     const refresh=()=>{try{update(status,lastPlan);}catch{/* panel must never block chat */}};
@@ -25,7 +26,7 @@ export function connect({context,settings=()=>DEFAULTS,rng,update=()=>{},autoBin
                 // ST may preselect a not-yet-generated swipe index. The selected source or its placeholder is valid.
                 const emptySlot=k==='swipe'&&Array.isArray(tail?.swipes)&&tail.swipe_id>=tail.swipes.length;
                 if(id!==replay.anchor&&!emptySlot)replay=null;}}
-        turn={k,room:room(ctx),refs:[],used:false,signal:options?.signal};}
+        turn={k,originalTail:k==='regenerate'?ctx.chat?.at(-1):null,room:room(ctx),refs:[],used:false,signal:options?.signal};}
     function assembled(data,dry=false){if(dry||!turn||turn.used||!Array.isArray(data?.prompt)||!data.prompt.length)return;turn.refs.push(new Set(data.prompt.filter(m=>m&&typeof m==='object')));if(turn.refs.length>4)turn.refs.shift();}
     function ready(req){const ctx=context(),s=config(settings());if(!turn||turn.used||!s.enabled||turn.signal?.aborted||room(ctx)!==turn.room||!Array.isArray(req?.messages)||!req.messages.length||turn.k!==typeOf(req.type))return;
         // ST filters into a new array but keeps the individual message objects; avoid borrowing a helper's request.
@@ -34,7 +35,7 @@ export function connect({context,settings=()=>DEFAULTS,rng,update=()=>{},autoBin
         if(!actor){say('跳过：尚未确定本轮发言角色。');return;}
         if(s.scope==='targets'&&!targetName(req.model)){say('跳过：不在所选 Gemini 4 别名范围。');return;}
         if(toolOrSchema(req)||!ctx.chat?.length||!req.messages.some(m=>m.role==='user')){say('跳过：工具、结构化、多候选或非聊天请求。');return;}
-        const k=turn.k,replace=(k==='swipe'||k==='continue')&&ctx.chat.length>0&&!ctx.chat.at(-1).is_user&&!ctx.chat.at(-1).is_system;
+        const k=turn.k,replace=(k==='swipe'||k==='continue'||k==='regenerate'&&turn.originalTail===ctx.chat.at(-1)&&owns(actor,ctx.chat.at(-1)))&&ctx.chat.length>0&&!ctx.chat.at(-1).is_user&&!ctx.chat.at(-1).is_system;
         if(k==='continue'&&!replace){say('跳过：没有可续写的角色消息。');return;}
         const pos=ctx.chat.length-(replace?1:0), prior=ctx.chat.slice(0,pos);
         if(outOfStory(last(prior,m=>m?.is_user&&!m.is_system)?.mes)){say('跳过：最近用户消息以戏外、摘要或编辑指令开头。');return;}
@@ -49,6 +50,18 @@ export function connect({context,settings=()=>DEFAULTS,rng,update=()=>{},autoBin
             const replayNow=replay;replay=null;
             const matched=s.memory&&replayNow&&['swipe','regenerate'].includes(k)&&replayNow.room===turn.room&&replayNow.owner===actor.key&&replayNow.pos===pos&&replayNow.parent===timeline(prior).end;
             plan=matched?{card:BY_ID[replayNow.rec.id],level:Math.min(replayNow.rec.level,s.intensity),left:replayNow.rec.left,carry:!!replayNow.rec.carry,voice:replayNow.rec.voice,phase:replayNow.rec.phase}:roll(s,scene(actor.card,prior),mem,rng);
+            const userTurn = last(prior,m=>m?.is_user&&!m.is_system), lastScene=last(prior,m=>!m?.is_user&&!m?.is_system);
+            const marks=s.memory?accessHistory(ctx,mem.run):[];
+            const decision = () => accessFor({card:plan.card,level:s.userAccess,marks,
+                userText:visible(userTurn?.mes).slice(-460),sceneText:visible(lastScene?.mes).slice(-460),rng:accessRandom});
+            // A replay retains the old draw; new privacy boundaries and a disabled slider still win.
+            const fixed = matched ? replayNow.rec.access || '' : null;
+            if (fixed === null) plan.access=decision();
+            else {
+                const boundary=accessFor({card:plan.card,level:s.userAccess,userText:visible(userTurn?.mes).slice(-460),
+                    sceneText:visible(lastScene?.mes).slice(-460),rng:()=>1});
+                plan.access=boundary==='space'?fixed:boundary;
+            }
         }
         const note=noteFor(plan,mem,s,actor), messages=boundary(req.messages,note);
         if(note&&messages===req.messages){say('本次已跳过，原请求未重复注入。');return;}

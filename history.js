@@ -1,5 +1,5 @@
-import {KEY, visible, hasStory} from './engine.js';
-import {BY_ID} from './catalog.js';
+import {KEY, visible, hasStory} from './engine.js?v=1.2.0';
+import {BY_ID} from './catalog.js?v=1.2.0';
 // Local non-security fingerprints: no chat text is copied into the branch index.
 const cache=new WeakMap(), ROOT='root';
 function digest(s){let a=2166136261,b=5381;for(let i=0;i<s.length;i++){const v=s.charCodeAt(i);a=Math.imul(a^v,16777619);b=(Math.imul(b,33)^v)>>>0;}return (a>>>0).toString(36)+'.'+(b>>>0).toString(36)+'.'+s.length.toString(36);}
@@ -22,6 +22,18 @@ export function branch(ctx,actor,until=ctx.chat.length){const run=timeline(ctx.c
 });const last=live.at(-1)?.rec;
     return {run,live,active:last?.active&&BY_ID[last.id]?.mood&&last.left>0?{id:last.id,left:last.left,level:last.level,voice:last.voice,phase:last.phase}:null,
         recent:live.slice(-5).reverse().map(x=>x.rec.id).filter(Boolean),confirmed:live.filter(x=>x.rec.quote).map(x=>({quote:x.rec.quote,private:x.rec.private}))};}
+// Only marks on selected, saved story replies count. No quotes or secrets cross speakers.
+export function accessHistory(ctx,run) {
+    if(!run)return [];
+    const byId=new Map(records(ctx).map(r=>[r.anchor,r])), out=[];
+    for(let j=run.rows.length-1;j>=0 && out.length<5;j--){
+        const row=run.rows[j]; if(row.msg.is_user || row.msg.is_system)continue;
+        const mark=byId.get(row.id)?.access;
+        if(!mark)break;
+        out.push(mark);
+    }
+    return out;
+}
 export function findEcho(body,card){if(!card)return '';const bits=visible(body).split(/(?<=[。！？!?；;])|\n+/u);for(let line of bits){line=line.trim();const match=card.trace.exec(line);if(!match)continue;
     const prior=line.slice(Math.max(0,match.index-9),match.index);if(/(?:没有|没在|不会|不是|并非|并未|不再|从不|并没有|不曾|never |didn.t )[^，。！？,;；]{0,2}$/iu.test(prior))continue;
     const start=Math.max(0,match.index-20);return [...line.slice(start)].slice(0,64).join('');}return '';}
@@ -30,7 +42,7 @@ const relief=/我(?:现在|已经|真的)?(?:不生气了|已经原谅你了|不
 const sensitiveToRelief=new Set(['temper','grief','withdraw','grudge','contrary','resent']);
 export function explicitlySettled(id,body){return sensitiveToRelief.has(id)&&relief.test(visible(body));}
 export function receipt(plan,body,owner,anchor){if(!hasStory(body))return null;const hit=findEcho(body,plan.card), id=plan.card?.id||'';
-    return {owner,anchor,id,level:plan.level,left:plan.left,active:!!(plan.card?.mood&&plan.left>0&&!explicitlySettled(id,body)&&(plan.carry||hit||plan.level>=60)),voice:plan.voice||null,phase:plan.phase||0,echo:hit,quote:'',private:true,carry:plan.carry};}
+    return {owner,anchor,id,access:plan.access||'',level:plan.level,left:plan.left,active:!!(plan.card?.mood&&plan.left>0&&!explicitlySettled(id,body)&&(plan.carry||hit||plan.level>=60)),voice:plan.voice||null,phase:plan.phase||0,echo:hit,quote:'',private:true,carry:plan.carry};}
 export function pin(ctx,row,quote,privateFlag,adopt){const t=String(quote??'').trim();if(!row||[...t].length<2||[...t].length>72||!hasStory(row.msg.mes)||!visible(row.msg.mes).includes(t))return false;
     const r={...row.rec,quote:t,private:!!privateFlag};if(adopt&&BY_ID[r.id]?.mood)r.active=true;return put(ctx,r);}
 export function visibleRowQuote(m,quote){return !!quote&&visible(m?.mes).includes(quote);}

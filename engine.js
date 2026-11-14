@@ -1,5 +1,6 @@
-import { CARDS, BY_ID } from './catalog.js';
-import {chooseVoice,deliveryAngle} from './voice.js';
+import {opportunityHint} from './access.js?v=1.2.0';
+import { CARDS, BY_ID } from './catalog.js?v=1.2.0';
+import {chooseVoice,deliveryAngle} from './voice.js?v=1.2.0';
 export const KEY='human_temper_v1';
 export const MARK='〔人性阴暗面/情绪/随机性放大·角色演出〕';
 export const BALANCED=Object.freeze({eventRate:65,unpredict:75,dark:75,intensity:82,independent:true,memory:true});
@@ -82,16 +83,6 @@ export function roll(settings,context,mem={},rng=localRandom){
     return {card,level,left,carry:false,voice:chooseVoice(card,tags,rng),phase:0};
 }
 function inline(t,n){return [...String(t??'').replace(/[\r\n\u0000-\u001f]+/g,' ').trim()].slice(0,n).join('');}
-// A manual presentation preference for existing events, never another draw or a participation quota.
-function participationFor(card,s){
-    if(card.group!=='event'&&card.group!=='agency')return '';
-    const access=config(s).userAccess;
-    const entry=access===0?'不额外铺设入口；user 主动介入时，按现场条件与角色意愿回应。':
-        access<=33?'入口可以不明显，通常需 user 自己留意、询问或找到时机，不特意递话。':
-        access<=66?'有合适条件时自然露出可察觉的参与机会，留一些需要 user 主动接近或询问的空间。':
-        '有合适条件时优先呈现容易发现、顺手加入的机会，减少额外询问或等待；100 也不保证每件事都可加入。';
-    return `user 参与便利度 ${access}/100：${entry}\n仅调整本轮事务的入口，不另造事件或巧合；既有独处、拒绝与知情边界照旧，没有合适入口就保持独立。\nuser 可加入、旁观或不参与；加入可以影响过程，不参与也能自行发展与收束，不停下来等 user 解决、决定或配合，也不反复邀请。`;
-}
 export function noteFor(plan,mem,s,actor){
     const facts=s.memory?(mem.confirmed??[]).slice(-3):[];if(!plan.card&&!facts.length)return '';
     const lines=[MARK+` 只演当前说话的角色${actor?.name?'「'+inline(actor.name,32)+'」':''}。角色卡的明确底线、所知范围和已发生的事实优先；用户自己的言行由用户决定。`];
@@ -103,7 +94,7 @@ export function noteFor(plan,mem,s,actor){
         const angle=deliveryAngle(plan.voice,plan.phase);if(angle)lines.push(angle);
         lines.push('反应可由当前事务、已有性格/情绪或现场合理刺激引出；转移注意力要符合这个人的动机与轻重缓急，不拿无依据的感官异常、癖好或往事凑意外。来由可以不说破；落点不合此刻就略过，接着当前事务。');
         if(s.independent)lines.push('这个人有自己的注意力、利益和时间，以自身动机决定回应，不以满足 user 的期待为默认目标。可以不配合，也可以出于真心关心或合作；不机械唱反调，不用道歉、示好或回头照顾来补偿每一次拒绝。');
-        const participation=participationFor(plan.card,s);if(participation)lines.push(participation);}
+        if(plan.access==='open' && s.userAccess>0)lines.push(opportunityHint);}
     for(const f of facts)lines.push(`本分支已确认原文${f.private?'（仅本角色作私下线索，别人未必知道）':'（沿用原有知情范围）'}：${JSON.stringify(inline(f.quote,72))}`);
-    lines.push('融入原有正文与格式，无需复述本说明；戏外编辑要求照常执行。');return lines.join('\n');
+    lines.push('融入原有正文与格式，无需复述本说明。若落点与本轮明确的视角、知情或角色权限冲突，换一种符合人设的表现，仍冲突就略过。戏外编辑要求照常执行。');return lines.join('\n');
 }
