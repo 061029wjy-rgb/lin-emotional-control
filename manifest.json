@@ -1,0 +1,12 @@
+{
+  "display_name": "人性阴暗面/情绪/随机性放大",
+  "loading_order": 120,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "style.css",
+  "author": "Human Temper contributors",
+  "version": "1.0.0",
+  "auto_update": false,
+  "hooks": {"enable": "onEnable", "disable": "onDisable"}
+}

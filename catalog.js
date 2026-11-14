@@ -1,0 +1,35 @@
+// Original fictional performance directions. A matcher can point to a quote, never prove an inner motive.
+const row = (id, label, group, weight, cues, direction, trace, mood = false) =>
+    Object.freeze({id, label, group, weight, cues: cues ? cues.split(' ') : [], direction, trace, mood});
+export const CARDS = [
+    row('temper','迁怒','emotion',4,'proud strain impatient','小事撞上积着的火，脾气可以发错对象。怎么发取决于此人：体面的人也可能只吐出一句伤人的实话。',/迁怒|发火|拍了下|摔下|吼|没好气|少管|有完没完|够了|冲我来|snapp?ed|leave me alone/i,true),
+    row('grief','哄不好的难过','emotion',5,'sensitive loss repair','难受还在。即使明白对方是好意，也可以收下安慰却一点没好，甚至希望被单独留下。不必给对方一个安慰成功的反馈。',/眼泪|想哭|哭|红了眼|让我.{0,5}(?:静|待|一个人)|还(?:是)?难过|说不出话|安慰不了|tears|still hurt/i,true),
+    row('withdraw','心冷了','emotion',4,'reserved breach strain','忽然没有力气维系热络。可以对事照常、对人冷淡；沉默不是等对方猜中一句通关台词。',/冷淡|冷冷|没(?:有)?(?:回|接|理)|不想谈|不想说|不接话|沉默|没有看|fell silent/i,true),
+    row('panic','害怕却嘴硬','emotion',3,'sensitive strain','其实慌得厉害，第一反应偏偏是坚持自己没事；这个反应不一定帮得上自己。',/别问|没事|手抖|手在抖|发抖|慌|声音发紧|fine,? really/i,true),
+    row('shame','恼羞','emotion',3,'proud exposure','被看穿或被关心都可能让人难堪。宁愿把话说岔，也不肯当场承认自己需要人。',/难堪|脸热|别看|别说了|不用你|耳根|别提|embarrass/i,true),
+    row('glee','高兴过了头','emotion',4,'joy lively','高兴到失了分寸，可能在别人还严肃的时候笑出来；让快乐也有自己的节奏，不必拿它讨好谁。',/笑出声|忍不住笑|笑了出来|高兴|笑得|手舞足蹈|得意忘形|burst out laughing/i,true),
+    row('fond','笨拙的偏爱','emotion',3,'warm repair','有一瞬真心想照顾人，做了也不愿被当成示好；他有权同时喜欢和生气。',/留了|塞给|替.{0,5}(?:收|拿)|递过|别误会|给你留|saved you/i,true),
+    row('hollow','什么都提不起劲','emotion',3,'loss tired reserved','兴趣突然褪了色；可以连吵架都懒得，去做一件极平常的事。不要自动把沉默写成欲擒故纵。',/没兴致|没劲|不想动|懒得|提不起|算了|couldn.t be bothered/i,true),
+    row('relief','迟来的松快','emotion',3,'repair tired','绷了半天才松一口气，延迟的轻快可能表现得不合时宜，不必有大道理。',/松了口气|松了气|舒了口气|肩膀.{0,4}松|松快|exhaled/i,true),
+    row('envy','酸意','shadow',4,'comparison proud','让一次比较刺痛自尊。可以真心替别人高兴，同时舍不得把那句好话说出口，不必立即自省。',/酸溜溜|酸意|嫉妒|妒忌|有什么了不起|倒是厉害|凭什么|jealous|envy/i,true),
+    row('grudge','记小账','shadow',4,'breach proud repair','还记着一笔不体面的小账，可选择不替人解围。别替对方编造新过错，也不必让记仇显得正义。',/记着|记仇|没忘|还记得|你自己(?:说|解决)|不替|自己收拾|haven.t forgotten/i,true),
+    row('contrary','赌气反口','shadow',4,'impatient stubborn repair','明知顺着办对自己也好，偏要反口或拒绝；角色可以做亏本的决定，不必为了讨喜补一句道歉。',/改主意|反悔|不去了|偏不|我不愿意|我就不|我不干|改口|changed my mind/i,true),
+    row('vanity','护住面子','shadow',3,'proud exposure','面子比把事情说清更要紧。可以回避自己有错的那一句，让争执悬着。',/轮不到|用不着你|别教我|脸面|面子|我没错|save face/i,true),
+    row('selfish','优先自保','shadow',3,'strain goal','遇到方便别人和方便自己之间的小选择，选择自己，即使不好看。别凭空造出灾难来替这件事辩护。',/我先|给自己留|我也有事|自己想办法|先顾|不帮|on my own/i,true),
+    row('hide','掩饰私心','shadow',2,'secret exposure','对本就在场的利害有所保留，只说愿意说的部分。信息边界照旧，不能靠读心获知秘密。',/没提|瞒|没说出口|咽了回去|只字未提|kept .* to (?:him|her|them)self/i,true),
+    row('breakfaith','失约图利','rupture',1,'breach goal','已有承诺与眼前私利发生冲突时，可以明知不妥仍选择失约，承担后果。不能新编承诺、旧怨或背叛史。',/失约|食言|爽约|毁约|不守约|答应过.{0,12}(?:不去|不来|不做)|broke .* promise/i,true),
+    row('resent','委屈到不想解释','emotion',4,'breach sensitive repair','不是想赢，只是委屈。不妨让角色拒绝继续解释；听见了道歉，也不欠一个“没关系”。',/委屈|不想解释|不想听|说不清|别再说|我听见了|not ready to talk/i,true),
+    row('delight','没人分享也开心','emotion',2,'lively joy goal','有件和对方无关的小事使他心情特别好。允许他自己享受，而不是把快乐兑换成好感。',/哼着|哼起|心情好|轻快|偷着乐|to (?:her|him|them)self,? smiling/i,true),
+    row('word','一句题外话','odd',5,'lively','目光或声音勾出一句乍听不相干的话。说完可以不解释，不要硬把它变成伏笔。',/忽然问|冷不丁|突然问|没头没脑|冒出一句|out of nowhere/i),
+    row('fiddle','手比嘴忙','odd',5,'reserved tired','手先去整理、摆弄场景里已经存在的小东西，可以短暂忘记接话；别为动作发明关键道具。',/摆弄|挪了挪|拨弄|捋平|叠好|转了半圈|fidget/i),
+    row('amuse','笑点迟到','odd',3,'lively','先前一个无关紧要的细节现在才逗乐他。笑得莫名其妙，也可以把缘由留在肚子里。',/噗嗤|扑哧|笑了一声|失笑|憋笑|chuckl/i),
+    row('interrupt','话说一半换话题','odd',3,'impatient','注意力突然跑掉，话说一半转了题。保留对这个人而言说得通的联想，不要求向读者解释。',/话锋一转|对了|说到一半|忽然想起|换了个话题|by the way/i),
+    row('quietjoy','独处的兴致','agency',4,'goal reserved','宁愿自己待一会儿，接着做手边的事。独处不是惩罚另一个人，不需要给对方留悬念。',/自己待|一个人待|让我静静|独自|想一个人|on my own/i),
+    row('agenda','自己的安排','agency',5,'goal stubborn','本来就有自己想做的事。可以拒绝临时要求，去赴已有的安排，不必赶回来照顾对方的心情。',/还有事|得走了|有约|先走了|我答应过|有安排|plans of my own/i),
+    row('nosolution','不接这个活','agency',3,'strain proud','不愿当调停者或解题人，可以坦白拒绝并继续生活。别把拒绝变成欲拒还迎。',/不归我管|我不管|我不想|我不接|另请|不关我的事|not my job/i),
+    row('delay','琐事拖慢一步','event',6,'tired busy','原本顺手的一件小事多费了一会儿，打乱一点谈话节奏。用已有场景里的琐事，无须宏大后果。',/耽搁|耽误|等一下|等一会|停了一下|took a moment/i),
+    row('noise','一声动静','event',4,'busy outdoors','周围一声符合现场的普通动静短暂抢了注意力，未必与任何人有关。',/响了|响起|动静|声响|听见|a noise/i),
+    row('chance','一个小便利','event',3,'outdoors goal','现场原有条件给了一个很小的方便；角色可以顺势利用或错过它，不制造巧合救场。',/正好|刚好|趁着|顺手|just in time/i),
+    row('rhythm','日常节奏来到','event',3,'night busy','已知时段或场所的日常节奏出现了一点变化，角色不必围着对话转。',/打烊|天色|灯亮|人散|钟响|换班|closing time/i),
+];
+export const BY_ID = Object.fromEntries(CARDS.map(c=>[c.id,c]));
